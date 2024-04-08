@@ -118,11 +118,11 @@ def start_consumer(channel, redis_client):
 
 # Main
 def main():
+    print('Consumer iniciado...')
     connection = connect_rabbitmq()
     channel = connection.channel()
     redis_client = connect_redis()
     try:
-        print('Consumidor iniciado...')
         start_consumer(channel, redis_client)
     except KeyboardInterrupt:
         channel.stop_consuming()

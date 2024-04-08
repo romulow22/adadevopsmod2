@@ -58,9 +58,10 @@ def setup_rabbitmq():
     channel.queue_bind(queue=transaction_queue_name, exchange=exchange_name, routing_key=routing_key)
     channel.queue_bind(queue=antifraud_queue_name, exchange=exchange_name, routing_key=routing_key)
         
+    channel.close()
+    connection.close() 
     print("RabbitMQ configurado com sucesso!")
-    return connection, channel
-
+    
 # Configuração do MinIO
 def setup_minio():    
     bucket_name = "reportes-antifraude"
@@ -94,45 +95,11 @@ def setup_minio():
     client.set_bucket_policy(bucket_name, policy_json)
     print("Minio configurado com sucesso!")
     
-# Produção de Mensagens 
-def publish_json_to_exchange(channel, exchange_name, routing_key, count):
-    url = f"https://api.mockaroo.com/api/0eee3010?count={count}&key=31e736b0"
-    response = requests.get(url)
-    if response.status_code == 200 and "error" not in response.text:
-        json_objects = response.json()
-    else:
-        url = f"https://api.mockaroo.com/api/6ffc21b0?count={count}&key=e3a906f0"
-        response = requests.get(url)
-        response.raise_for_status()  # Levanta uma exceção para respostas 4xx/5xx
-        json_objects = response.json()
-    messages_sent = 0
-    for obj in json_objects:        
-        message = json.dumps(obj)
-        properties = pika.BasicProperties(content_type='application/json')
-        channel.basic_publish(exchange=exchange_name, routing_key=routing_key, body=message, properties=properties)
-        messages_sent += 1
-    print(f" [x] {messages_sent} Mensagem(s) Enviada(s)")  
-
 def main():
     
-  
-    #RabbitMQ
-    connection, channel = setup_rabbitmq()
-    # MinIO
+    setup_rabbitmq()
     setup_minio()
-    #Producer
-    try:
-        exchange_name = 'transaction_exchange'
-        routing_key = 'transaction_routing_key'
-        while True:
-            count = random.randint(10, 20)  # Gera um número aleatório entre 10 e 20
-            publish_json_to_exchange(channel, exchange_name, routing_key, count)
-            time.sleep(60)  # Aguarda 60 segundos antes de publicar novamente
-    except KeyboardInterrupt:
-        print("Script interrompido pelo usuário")
-    finally:
-        channel.close()
-        connection.close()    
-
+    print("Setup Finalizado")
+    
 if __name__ == "__main__":
     main()

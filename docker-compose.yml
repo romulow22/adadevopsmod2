@@ -88,18 +88,19 @@ services:
   baseapp:
     build:
       context: ./app
-      dockerfile: container-python.dockerfile
+      dockerfile: containerbase.dockerfile
     container_name: baseapp
     volumes:
-      - ./app/cria_amb_producer.py:/app/cria_amb_producer.py
-      - ./app/cria_consumer_relatorio.py:/app/cria_consumer_relatorio.py
-    stdin_open: true # docker run -i
-    tty: true        # docker run -t
+      - ./app/producer.py:/app/producer.py
+      - ./app/consumer.py:/app/consumer.py
+      - ./app/criaamb.py:/app/criaamb.py
+    #stdin_open: true # docker run -i
+    #tty: true        # docker run -t
     networks:
       - default_net
     #for debugging
-    command: >
-      /bin/sh -c "/bin/bash"
+    #command: >
+    #  /bin/sh -c "/bin/bash"
     secrets:
       - minio_root_usr
       - minio_root_pwd
@@ -111,20 +112,27 @@ services:
       redis:
         condition: service_healthy
       minio:
-        condition: service_healthy     
-  cria_amb_producer:
+        condition: service_healthy  
+  criaambapp:
     extends: baseapp
-    container_name: cria_amb_producer
-    entrypoint: python /app/cria_amb_producer.py
+    container_name: criaambapp
+    entrypoint: python3 /app/criaamb.py
     depends_on:
-      - baseapp
-  cria_consumer_relatorio:
+      - baseapp      
+  producerapp:
     extends: baseapp
-    container_name: cria_consumer_relatorio
-    entrypoint: python /app/cria_consumer_relatorio.py
+    container_name: producerapp
+    entrypoint: python3 /app/producer.py
     depends_on:
-      - baseapp
-      - cria_amb_producer
+      criaambapp:
+        condition: service_completed_successfully
+  consumerapp:
+    extends: baseapp
+    container_name: consumerapp
+    entrypoint: python3 /app/consumer.py
+    depends_on:
+      criaambapp:
+        condition: service_completed_successfully
 secrets:
   minio_root_usr:
     file: ./minio/secrets/minio_usr.txt
