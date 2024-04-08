@@ -74,7 +74,7 @@ def main():
         while True:
             count = random.randint(10, 20)  # Gera um número aleatório entre 10 e 20
             publish_json_to_exchange(channel, exchange_name, routing_key, count)
-            time.sleep(60)  # Aguarda 60 segundos antes de publicar novamente
+            time.sleep(30)  # Aguarda 30 segundos antes de publicar novamente
     except KeyboardInterrupt:
         print("Script interrompido pelo usuário")
     finally:
